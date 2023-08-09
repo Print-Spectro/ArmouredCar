@@ -46,6 +46,7 @@ void AMyArmouredCar::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	UEnhancedInputComponent* PEI = Cast<UEnhancedInputComponent>(PlayerInputComponent);
 	//Binding the actions
 	PEI->BindAction(InputActions->InputSteer, ETriggerEvent::Triggered, this, &AMyArmouredCar::Steer);
+	PEI->BindAction(InputActions->InputSteer, ETriggerEvent::Completed, this, &AMyArmouredCar::Steer);
 	PEI->BindAction(InputActions->InputLook, ETriggerEvent::Triggered, this, &AMyArmouredCar::Look);
 
 	PEI->BindAction(InputActions->InputAccelerate, ETriggerEvent::Triggered , this, &AMyArmouredCar::Accelerate);
@@ -75,9 +76,9 @@ void AMyArmouredCar::Look(const FInputActionValue& Value){
 void AMyArmouredCar::Accelerate(const FInputActionValue& Value) {
 
 
-	//float ThrottleValue = Value.Get<>
+	float Magnitude = Value.GetMagnitude();
 	UE_LOG(LogTemp, Display, TEXT("ThrottleDetected"));
-	GetVehicleMovementComponent()->SetThrottleInput(1);
+	GetVehicleMovementComponent()->SetThrottleInput(Magnitude);
 
 
 	
@@ -85,5 +86,6 @@ void AMyArmouredCar::Accelerate(const FInputActionValue& Value) {
 
 void AMyArmouredCar::Steer(const FInputActionValue& Value) {
 
-	"a";
+	float Magnitude = Value.GetMagnitude();
+	GetVehicleMovementComponent()->SetSteeringInput(Magnitude);
 }
