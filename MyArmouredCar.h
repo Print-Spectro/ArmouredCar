@@ -72,6 +72,10 @@ protected:
 	//Rate in degrees per second
 	float GunElevationRate = 20;
 
+	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Defaults")
+	//Rate in degrees per second
+	float TurretRotationRate = 40;
+
 	UChaosVehicleMovementComponent* MovementComponent;
 
 	void Look(const FInputActionValue& Value);
@@ -88,7 +92,7 @@ protected:
 
 	FVector getAimingAT();
 
-	void setTurretRotatoin(const float& rotation);
+	void setTurretRotation(const float& rotation);
 
 	void setGunElevation(const float& elevation);
 
@@ -99,4 +103,6 @@ protected:
 	FVector getRelativeLookingAt(const FVector& LookingAt);
 
 	void interpGunElevation(float DeltaTime, const float& TargetLocation);
+
+	void interpTurretRotation(float DeltaTime, const float& TargetRotation);
 };

@@ -58,7 +58,6 @@ void AMyArmouredCar::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PEI->BindAction(InputActions->InputAccelerate, ETriggerEvent::Triggered , this, &AMyArmouredCar::Accelerate);
 	PEI->BindAction(InputActions->InputAccelerate, ETriggerEvent::Completed, this, &AMyArmouredCar::Accelerate);
 
-
 }
 
 
@@ -70,7 +69,7 @@ void AMyArmouredCar::Tick(float DeltaTime)
 
 	//Setting the turret to follow the camera each tick
 	FVector LookingAt = getLookingAT();
-	setTurretRotatoin(getTurretRotationFromCamera(LookingAt));
+	interpTurretRotation(DeltaTime, getTurretRotationFromCamera(LookingAt));
 	//setGunElevation(getGunEvevationFromCamera(LookingAt));
 	interpGunElevation(DeltaTime, getGunEvevationFromCamera(LookingAt));
 
@@ -98,8 +97,12 @@ void AMyArmouredCar::Accelerate(const FInputActionValue& Value) {
 	float Magnitude = Value.GetMagnitude();
 	//UE_LOG(LogTemp, Display, TEXT("ThrottleDetected"));
 	GetVehicleMovementComponent()->SetThrottleInput(Magnitude);
-
-
+	if (GetVehicleMovementComponent()->GetForwardSpeed() < -0.1) {
+		GetVehicleMovementComponent()->SetBrakeInput(Magnitude);
+	}
+	if (GetVehicleMovementComponent()->GetForwardSpeed() > -0.1) {
+		GetVehicleMovementComponent()->SetBrakeInput(0);
+	}
 	
 }
 
@@ -140,6 +143,8 @@ FVector AMyArmouredCar::getLookingAT() {
 }
 
 FVector AMyArmouredCar::getAimingAT() {
+	//Line trace starting at the "gunshield" bone along the line of the gun barrel, returns first hit in the visibility channel
+
 	FHitResult OutHitResult;
 
 	FVector Start = GetMesh()->GetBoneLocation(FName("Gunshield"));
@@ -200,7 +205,8 @@ float AMyArmouredCar::getTurretRotationFromCamera(const FVector& LookingAt) {
 
 	//Getting the world rotation of the vehicle to rotate the looking at vector so that it has the same orientation as the vehicle
 	FQuat MeshAngle = GetMesh()->GetComponentQuat();
-	//Taking the world looking at and making it relative to the turret bone by subtracting the vehicle location and rotating by the inverse of the vehicle rotation.
+
+	//Taking the world "LookingAt" and making it relative to the turret bone by subtracting the vehicle location and rotating by the inverse of the vehicle rotation.
 	FVector RelativeLookingAt = UKismetMathLibrary::Quat_RotateVector(MeshAngle.Inverse(), LookingAt - GetMesh()->GetBoneLocation(FName("Turret")));
 
 	//Calculating the angle between the turret bone and the looking at location in the plane of the vehicle
@@ -211,25 +217,48 @@ float AMyArmouredCar::getTurretRotationFromCamera(const FVector& LookingAt) {
 }
 
 float AMyArmouredCar::getGunEvevationFromCamera(const FVector& LookingAt) {
-	//Calculates and returns the rotation of the turret bone so that it looks at the same spot as the player camera
+	//Calculates and returns the rotation of the gunshield bone so that it looks at the same spot as the player camera
+	// 
 	//Getting the world rotation of the vehicle to rotate the looking at vector so that it has the same orientation as the vehicle
 	FQuat MeshAngle = GetMesh()->GetComponentQuat();
+
 	//Taking the world looking at and making it relative to the turret bone by subtracting the vehicle location and rotating by the inverse of the vehicle rotation.
 	FVector RelativeLookingAt = UKismetMathLibrary::Quat_RotateVector(MeshAngle.Inverse(), LookingAt - GetMesh()->GetBoneLocation(FName("Gunshield")));
+
 	//float rotation = FMath::Atan(RelativeLookingAt.Y / RelativeLookingAt.X) * 360/(2*3.14159265358979);
 	FRotator Rotation = FRotationMatrix::MakeFromX(RelativeLookingAt).Rotator();
 	float elevation = Rotation.Pitch;
 	return elevation;
 }
 
-void AMyArmouredCar::interpGunElevation(float DeltaTime, const float& TargetLocation) {
-
-	float NewLocation = FMath::FInterpConstantTo(GunElevation, TargetLocation, DeltaTime, GunElevationRate);
-	setGunElevation(NewLocation);
+void AMyArmouredCar::interpGunElevation(float DeltaTime, const float& TargetRotation) {
+	//linear interpolation from the current gun elevation to a target gun elevation
+	float NewRotation = FMath::FInterpConstantTo(GunElevation, TargetRotation, DeltaTime, GunElevationRate);
+	setGunElevation(NewRotation);
 }
 
-void AMyArmouredCar::setTurretRotatoin(const float& rotation) {
-	TurretRotation = remainder(rotation, 360);
+void AMyArmouredCar::interpTurretRotation(float DeltaTime, const float& TargetRotation) {
+	//linear interpolation from the current turret rotation to a target rotation with some hacky maths to make it work properly
+	float LocalTarget = TargetRotation;
+	if (abs(TargetRotation - TurretRotation)<180.f) {
+		LocalTarget = TargetRotation;
+
+	}
+	else {
+		LocalTarget = ((TargetRotation < 0) - (TargetRotation > 0)) * (360 - TargetRotation);
+		if ((LocalTarget > 0) - (LocalTarget < 0) == (TurretRotation > 0) - (TurretRotation < 0)) {
+			LocalTarget = TargetRotation;
+			setTurretRotation(remainder(TurretRotation, 360));
+		}
+	}
+	float NewRotation = FMath::FInterpConstantTo(TurretRotation, LocalTarget, DeltaTime, TurretRotationRate);
+	setTurretRotation(NewRotation);
+	
+	
+}
+
+void AMyArmouredCar::setTurretRotation(const float& rotation) {
+	TurretRotation = rotation;
 }
 
 void AMyArmouredCar::setGunElevation(const float& elevation) {
