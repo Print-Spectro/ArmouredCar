@@ -29,7 +29,7 @@ public:
 	UInputAction* InputFire;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	UInputAction* Handbreak;
+	UInputAction* InputBrake;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	UInputAction* Rangefind;

@@ -45,6 +45,24 @@ protected:
 	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite)
 	class UCameraComponent* ThirdPersonCamera;
 
+	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite, Category = "Transform")
+	float MaxAimDistance = 10000;
+
+	UPROPERTY(VisibleAnywhere,BlueprintReadWrite, Category = "Transform")
+	float TurretRotation;
+
+	UPROPERTY(VisibleAnywhere,BlueprintReadWrite, Category = "Transform")
+	float GunElevation;
+
+	UPROPERTY(VisibleAnywhere,BlueprintReadWrite, Category = "Transform")
+	float GunReciol;
+
+	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Defaults")
+	float GunElevationLimit = 20;
+
+	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Defaults")
+	float GunDepressionLimit = 10;
+
 	UChaosVehicleMovementComponent* MovementComponent;
 
 	void Look(const FInputActionValue& Value);
@@ -52,4 +70,22 @@ protected:
 	void Accelerate(const FInputActionValue& Value);
 
 	void Steer(const FInputActionValue& Value);
+
+	void Brake(const FInputActionValue& Value);
+
+	void Mydrawdebugline(const FVector& Start, const FVector& End, FColor Colour);
+
+	FVector Getlookingat();
+
+	FVector Getaimingat();
+
+	void Setturretrotation(const float& rotation);
+
+	void Setgunelevation(const float& elevation);
+
+	float Getturretrotationfromcamera(const FVector& LookingAt);
+
+	float Getgunevelationfromcamera(const FVector& LookingAt);
+
+	FVector Getrelativelookingat(const FVector& LookingAt);
 };
