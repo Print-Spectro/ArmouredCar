@@ -248,10 +248,10 @@ void AMyArmouredCar::interpTurretRotation(float DeltaTime, const float& TargetRo
 	else {
 		//Here I am converting the angle to its compliment i.e the angle that gives the same position but going in the opposite direction around the circle. -90 degrees becomes 270 degrees.
 		LocalTarget = ((TargetRotation < 0) - (TargetRotation > 0)) * (360 - abs(TargetRotation));
-		//If the target rotation has the same sign as the turret rotation then we set both to their remainder with respect to 360, to keep the numbers in check. 
+		//If the target rotation has the same sign as the turret rotation then we set both to their remainder with respect to 360, to keep the numbers in check (we also know that the interp distance is less than 180).
 		if ((TargetRotation > 0) - (TargetRotation < 0) == (TurretRotation > 0) - (TurretRotation < 0)) {
-			LocalTarget = TargetRotation;
 			//Used to keep the numbers in check, without this, the interpolation would break after 1 full rotation
+			LocalTarget = TargetRotation;
 			setTurretRotation(remainder(TurretRotation, 360));
 		}
 	}
