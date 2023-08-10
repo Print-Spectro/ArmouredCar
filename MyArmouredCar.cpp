@@ -239,15 +239,19 @@ void AMyArmouredCar::interpGunElevation(float DeltaTime, const float& TargetRota
 
 void AMyArmouredCar::interpTurretRotation(float DeltaTime, const float& TargetRotation) {
 	//linear interpolation from the current turret rotation to a target rotation with some hacky maths to make it work properly
-	float LocalTarget = TargetRotation;
-	if (abs(TargetRotation - TurretRotation)<180.f) {
+	float LocalTarget;
+	//The shorter of the two rotations between two angles on a circle is always less than 180 degrees, in this instance, we just interpolate like normal
+	if (abs(TargetRotation - TurretRotation)<=180.f) {
 		LocalTarget = TargetRotation;
-
 	}
+	//If the angle is greater than 180 degrees then we would be taking the longer path, hence we calculate a new local target that takes the shorter path
 	else {
-		LocalTarget = ((TargetRotation < 0) - (TargetRotation > 0)) * (360 - TargetRotation);
-		if ((LocalTarget > 0) - (LocalTarget < 0) == (TurretRotation > 0) - (TurretRotation < 0)) {
+		//Here I am converting the angle to its compliment i.e the angle that gives the same position but going in the opposite direction around the circle. -90 degrees becomes 270 degrees.
+		LocalTarget = ((TargetRotation < 0) - (TargetRotation > 0)) * (360 - abs(TargetRotation));
+		//If the target rotation has the same sign as the turret rotation then we set both to their remainder with respect to 360, to keep the numbers in check. 
+		if ((TargetRotation > 0) - (TargetRotation < 0) == (TurretRotation > 0) - (TurretRotation < 0)) {
 			LocalTarget = TargetRotation;
+			//Used to keep the numbers in check, without this, the interpolation would break after 1 full rotation
 			setTurretRotation(remainder(TurretRotation, 360));
 		}
 	}
