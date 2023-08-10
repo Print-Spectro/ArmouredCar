@@ -45,8 +45,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite)
 	class UCameraComponent* ThirdPersonCamera;
 
-	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite, Category = "Transform")
-	float MaxAimDistance = 10000;
 
 	UPROPERTY(VisibleAnywhere,BlueprintReadWrite, Category = "Transform")
 	float TurretRotation;
@@ -57,11 +55,22 @@ protected:
 	UPROPERTY(VisibleAnywhere,BlueprintReadWrite, Category = "Transform")
 	float GunReciol;
 
+	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite, Category = "Transform")
+	//Aim distance in cm. 1000000cm = 10km
+	//Trace distance for "getLookingAt" and "getAimingAT" functions 
+	float MaxAimDistance = 1000000;
+
 	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Defaults")
+	//Elevation in degrees
 	float GunElevationLimit = 20;
 
 	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Defaults")
+	//Gun depression in degrees
 	float GunDepressionLimit = 10;
+
+	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Defaults")
+	//Rate in degrees per second
+	float GunElevationRate = 20;
 
 	UChaosVehicleMovementComponent* MovementComponent;
 
@@ -73,19 +82,21 @@ protected:
 
 	void Brake(const FInputActionValue& Value);
 
-	void Mydrawdebugline(const FVector& Start, const FVector& End, FColor Colour);
+	void myDrawDebugLine(const FVector& Start, const FVector& End, FColor Colour);
 
-	FVector Getlookingat();
+	FVector getLookingAT();
 
-	FVector Getaimingat();
+	FVector getAimingAT();
 
-	void Setturretrotation(const float& rotation);
+	void setTurretRotatoin(const float& rotation);
 
-	void Setgunelevation(const float& elevation);
+	void setGunElevation(const float& elevation);
 
-	float Getturretrotationfromcamera(const FVector& LookingAt);
+	float getTurretRotationFromCamera(const FVector& LookingAt);
 
-	float Getgunevelationfromcamera(const FVector& LookingAt);
+	float getGunEvevationFromCamera(const FVector& LookingAt);
 
-	FVector Getrelativelookingat(const FVector& LookingAt);
+	FVector getRelativeLookingAt(const FVector& LookingAt);
+
+	void interpGunElevation(float DeltaTime, const float& TargetLocation);
 };
