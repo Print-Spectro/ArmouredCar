@@ -75,6 +75,7 @@ protected:
 	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Defaults")
 	//Rate in degrees per second
 	float TurretRotationRate = 40;
+	class UMyRewindComponent* RewindComponent;
 
 	UChaosVehicleMovementComponent* MovementComponent;
 
@@ -105,4 +106,6 @@ protected:
 	void interpGunElevation(float DeltaTime, const float& TargetLocation);
 
 	void interpTurretRotation(float DeltaTime, const float& TargetRotation);
+
+	void Rewind();
 };

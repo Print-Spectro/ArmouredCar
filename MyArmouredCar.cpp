@@ -12,6 +12,7 @@
 #include "DrawDebugHelpers.h"
 #include "Kismet/KismetMathLibrary.h" //used for rotating vector using quaternion
 #include "MyInputConfigData.h"
+#include "MyRewindComponent.h"
 
 
 
@@ -24,6 +25,8 @@ AMyArmouredCar::AMyArmouredCar() {
 
 	ThirdPersonCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("ThirdPersonCamera"));
 	ThirdPersonCamera->SetupAttachment(SpringArmComp);
+
+	RewindComponent = CreateDefaultSubobject<UMyRewindComponent>(TEXT("RewindComponent"));
 }
 
 void AMyArmouredCar::BeginPlay()
@@ -57,6 +60,7 @@ void AMyArmouredCar::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PEI->BindAction(InputActions->InputBrake, ETriggerEvent::Completed, this, &AMyArmouredCar::Brake);
 	PEI->BindAction(InputActions->InputAccelerate, ETriggerEvent::Triggered , this, &AMyArmouredCar::Accelerate);
 	PEI->BindAction(InputActions->InputAccelerate, ETriggerEvent::Completed, this, &AMyArmouredCar::Accelerate);
+	PEI->BindAction(InputActions->Rangefind, ETriggerEvent::Triggered, this, &AMyArmouredCar::Rewind);
 
 }
 
@@ -267,9 +271,12 @@ void AMyArmouredCar::setTurretRotation(const float& rotation) {
 
 void AMyArmouredCar::setGunElevation(const float& elevation) {
 	//Sets the value of gun elevation exposed to the animation instance
-	//Only sets elevation if withing max and min elevation default values.
+	//Only sets elevation if within max and min elevation default values.
 	if ((GunElevationLimit > elevation) && (elevation > -GunDepressionLimit)) {
 		GunElevation = elevation;
 	}
 }
 
+void AMyArmouredCar::Rewind() {
+	RewindComponent->Rewind();
+}
