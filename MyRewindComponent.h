@@ -24,6 +24,8 @@ protected:
 
 	TArray<FVector> LocationArray;
 
+	TArray<FRotator> RotationArray;
+
 	bool rewind = false;
 
 	bool record = true;

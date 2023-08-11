@@ -32,16 +32,21 @@ void UMyRewindComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 		Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 		if (LocationArray.Num() > 300) {
 			LocationArray.RemoveAt(0);
+			RotationArray.RemoveAt(0);
 			LocationArray.Add(GetOwner()->GetActorLocation());
+			RotationArray.Add(GetOwner()->GetActorRotation());
 		}
 		else {
 			LocationArray.Add(GetOwner()->GetActorLocation());
+			RotationArray.Add(GetOwner()->GetActorRotation());
 		}
 		index = (LocationArray).Num()-1;
 	}
 	
 	if (rewind) {
 		GetOwner()->SetActorLocation(LocationArray[index], true, nullptr, ETeleportType::TeleportPhysics);
+
+		GetOwner()->SetActorRotation(RotationArray[index], ETeleportType::TeleportPhysics);
 		index--;
 		if (index <= 0) {
 			rewind = false;
