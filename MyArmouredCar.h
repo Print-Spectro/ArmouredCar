@@ -107,5 +107,5 @@ protected:
 
 	void interpTurretRotation(float DeltaTime, const float& TargetRotation);
 
-	void Rewind();
+	void rewind();
 };

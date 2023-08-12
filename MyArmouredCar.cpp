@@ -60,7 +60,7 @@ void AMyArmouredCar::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PEI->BindAction(InputActions->InputBrake, ETriggerEvent::Completed, this, &AMyArmouredCar::Brake);
 	PEI->BindAction(InputActions->InputAccelerate, ETriggerEvent::Triggered , this, &AMyArmouredCar::Accelerate);
 	PEI->BindAction(InputActions->InputAccelerate, ETriggerEvent::Completed, this, &AMyArmouredCar::Accelerate);
-	PEI->BindAction(InputActions->Rangefind, ETriggerEvent::Triggered, this, &AMyArmouredCar::Rewind);
+	PEI->BindAction(InputActions->Rangefind, ETriggerEvent::Triggered, this, &AMyArmouredCar::rewind);
 
 }
 
@@ -277,6 +277,6 @@ void AMyArmouredCar::setGunElevation(const float& elevation) {
 	}
 }
 
-void AMyArmouredCar::Rewind() {
-	RewindComponent->Rewind();
+void AMyArmouredCar::rewind() {
+	RewindComponent->rewind();
 }
