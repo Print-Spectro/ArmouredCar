@@ -37,6 +37,7 @@ void UMyRewindComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	if (Rewind) {
+		//Interpolate between current and target location, setting location each frame.
 		FVector InterpLocation = FMath::VInterpConstantTo(GetOwner()->GetActorLocation(), LocationArray[index], DeltaTime, FVector::Distance(PreviousLocation, LocationArray[index])*SampleRate);
 		FRotator InterpRotation = FMath::RInterpConstantTo(GetOwner()->GetActorRotation(), RotationArray[index], DeltaTime, ((RotationArray[index] - PreviousRotation).GetNormalized().Euler() * SampleRate).Size());
 	
@@ -49,6 +50,7 @@ void UMyRewindComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 }
 
 void UMyRewindComponent::rewind() {
+	//Rewind through the list of saved positions
 	Record = false;
 	Rewind = true;
 	index = LocationArray.Num()-1;
