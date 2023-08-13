@@ -20,7 +20,7 @@ public:
 
 	//units in Hertz (per second) 
 	UPROPERTY(EditAnywhere, Category = "Rewind Parameters", meta = (ToolTip = "Set the rewind sample rate in Hertz (per second)"))
-	float SampleRate = 100;
+	float SampleRate = 200;
 
 	//float SampleInterval = 1 / SampleRate;
 
@@ -49,13 +49,17 @@ private:
 
 	float SampleBufferLength = SampleBufferTime * SampleRate;
 
-	bool Rewind = true;
+	bool Rewind = false;
 
 	bool Record = true;
 
 	bool BufferIsFull = false;
 
 	int index;
+
+	FVector PreviousLocation;
+
+	FRotator PreviousRotation;
 
 	FTimerHandle SampleTimer;
 

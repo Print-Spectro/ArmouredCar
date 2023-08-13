@@ -36,12 +36,24 @@ void UMyRewindComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
+	if (Rewind) {
+		FVector InterpLocation = FMath::VInterpConstantTo(GetOwner()->GetActorLocation(), LocationArray[index], DeltaTime, FVector::Distance(PreviousLocation, LocationArray[index])*SampleRate);
+		FRotator InterpRotation = FMath::RInterpConstantTo(GetOwner()->GetActorRotation(), RotationArray[index], DeltaTime, ((RotationArray[index] - PreviousRotation).GetNormalized().Euler() * SampleRate).Size());
+	
+		GetOwner()->SetActorLocation(InterpLocation, true, nullptr, ETeleportType::TeleportPhysics);
+		GetOwner()->SetActorRotation(InterpRotation, ETeleportType::TeleportPhysics);
+	
+	}
+
 
 }
 
 void UMyRewindComponent::rewind() {
 	Record = false;
+	Rewind = true;
 	index = LocationArray.Num()-1;
+	PreviousLocation = GetOwner()->GetActorLocation();
+	PreviousRotation = GetOwner()->GetActorRotation();
 	GetWorld()->GetTimerManager().SetTimer(RewindTimer, this, &UMyRewindComponent::replay, 1 / SampleRate, true, 0);
 }
 
@@ -70,13 +82,14 @@ void UMyRewindComponent::replay() {
 	if (!Rewind) {
 		return;
 	}
-	//Set actor transform
-	GetOwner()->SetActorLocation(LocationArray[index], true, nullptr, ETeleportType::TeleportPhysics);
-	GetOwner()->SetActorRotation(RotationArray[index], ETeleportType::TeleportPhysics);
+	//Iterate through arrays starting at the end once every 1/sample rate seconds: framerate independent 
 	index--;
+	PreviousLocation = LocationArray[index + 1];
+	PreviousRotation = RotationArray[index + 1];
 	if (index <= 0) {
 		GetWorld()->GetTimerManager().ClearTimer(RewindTimer);
 		Record = true;
+		Rewind = false;
 		
 	}
 
