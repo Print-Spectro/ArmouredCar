@@ -19,14 +19,17 @@ public:
 	void rewind();
 
 	//units in Hertz (per second) 
-	UPROPERTY(EditAnywhere, Category = "Rewind Parameters", meta = (ToolTip = "Set the rewind sample rate in Hertz (per second)"))
+	UPROPERTY(EditDefaultsOnly, Category = "Rewind Parameters", meta = (ToolTip = "Set the rewind sample rate in Hertz (per second)"))
 	float SampleRate = 200;
 
 	//float SampleInterval = 1 / SampleRate;
 
 	//units in seconds
-	UPROPERTY(EditAnywhere, Category = "Rewind Parameters", meta = (ToolTip = "Set the duration of the rewind buffer in seconds"))
+	UPROPERTY(EditDefaultsOnly, Category = "Rewind Parameters", meta = (ToolTip = "Set the duration of the rewind buffer in seconds"))
 	float SampleBufferTime = 3;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Rewind Parameters", meta = (ToolTip = "Whether rewind should interoplate between data points"))
+	bool Interpolate = 0;
 
 protected:
 	// Called when the game starts

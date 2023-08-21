@@ -35,7 +35,6 @@ void AMyArmouredCar::BeginPlay()
 
 	//AnimInstance Cast<>
 
-
 }
 
 void AMyArmouredCar::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -280,3 +279,4 @@ void AMyArmouredCar::setGunElevation(const float& elevation) {
 void AMyArmouredCar::rewind() {
 	RewindComponent->rewind();
 }
+

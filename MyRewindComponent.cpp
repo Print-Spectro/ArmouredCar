@@ -3,6 +3,8 @@
 
 #include "MyRewindComponent.h"
 #include "TimerManager.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "MyArmouredCar.h"
 
 // Sets default values for this component's properties
 UMyRewindComponent::UMyRewindComponent()
@@ -38,12 +40,21 @@ void UMyRewindComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 
 	if (Rewind) {
 		//Interpolate between current and target location, setting location each frame.
-		FVector InterpLocation = FMath::VInterpConstantTo(GetOwner()->GetActorLocation(), LocationArray[index], DeltaTime, FVector::Distance(PreviousLocation, LocationArray[index])*SampleRate);
-		FRotator InterpRotation = FMath::RInterpConstantTo(GetOwner()->GetActorRotation(), RotationArray[index], DeltaTime, ((RotationArray[index] - PreviousRotation).GetNormalized().Euler() * SampleRate).Size());
-	
-		GetOwner()->SetActorLocation(InterpLocation, true, nullptr, ETeleportType::TeleportPhysics);
-		GetOwner()->SetActorRotation(InterpRotation, ETeleportType::TeleportPhysics);
-	
+		if (Interpolate)
+		{
+			float Velocity = abs(FVector::Distance(PreviousLocation, LocationArray[index]) * SampleRate);
+			float RotationVelocity = abs((RotationArray[index].GetManhattanDistance(PreviousRotation)) * SampleRate);
+			FVector InterpLocation = FMath::VInterpConstantTo(GetOwner()->GetActorLocation(), LocationArray[index], DeltaTime, Velocity);
+			FRotator InterpRotation = FMath::RInterpConstantTo(GetOwner()->GetActorRotation(), RotationArray[index], DeltaTime, RotationVelocity);
+
+			GetOwner()->SetActorLocation(InterpLocation, true, nullptr, ETeleportType::ResetPhysics);
+			GetOwner()->SetActorRotation(InterpRotation, ETeleportType::ResetPhysics);
+		}else if (!Interpolate)
+		{
+			GetOwner()->SetActorLocation(LocationArray[index], true, nullptr, ETeleportType::ResetPhysics);
+			GetOwner()->SetActorRotation(RotationArray[index], ETeleportType::ResetPhysics);
+		}
+
 	}
 
 
@@ -56,7 +67,8 @@ void UMyRewindComponent::rewind() {
 	index = LocationArray.Num()-1;
 	PreviousLocation = GetOwner()->GetActorLocation();
 	PreviousRotation = GetOwner()->GetActorRotation();
-	GetWorld()->GetTimerManager().SetTimer(RewindTimer, this, &UMyRewindComponent::replay, 1 / SampleRate, true, 0);
+	Cast<AMyArmouredCar>(GetOwner())->GetMesh()->SetSimulatePhysics(0);
+	GetWorld()->GetTimerManager().SetTimer(RewindTimer, this, &UMyRewindComponent::replay, 1 / SampleRate, true, 1 / SampleRate);
 }
 
 void UMyRewindComponent::record() {
@@ -92,6 +104,9 @@ void UMyRewindComponent::replay() {
 		GetWorld()->GetTimerManager().ClearTimer(RewindTimer);
 		Record = true;
 		Rewind = false;
+		LocationArray.Empty();
+		RotationArray.Empty();
+		Cast<AMyArmouredCar>(GetOwner())->GetMesh()->SetSimulatePhysics(1);
 		
 	}
 

@@ -19,6 +19,7 @@ public:
 	// Sets default values for this character's properties
 	AMyArmouredCar();
 
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -55,7 +56,7 @@ protected:
 	UPROPERTY(VisibleAnywhere,BlueprintReadWrite, Category = "Transform")
 	float GunReciol;
 
-	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite, Category = "Transform")
+	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite, Category = "Defaults", Replicated)
 	//Aim distance in cm. 1000000cm = 10km
 	//Trace distance for "getLookingAt" and "getAimingAT" functions 
 	float MaxAimDistance = 1000000;
@@ -75,6 +76,8 @@ protected:
 	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Defaults")
 	//Rate in degrees per second
 	float TurretRotationRate = 40;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Defaults")
 	class UMyRewindComponent* RewindComponent;
 
 	UChaosVehicleMovementComponent* MovementComponent;
