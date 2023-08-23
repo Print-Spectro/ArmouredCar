@@ -12,6 +12,7 @@
 #include "DrawDebugHelpers.h"
 #include "Kismet/KismetMathLibrary.h" //used for rotating vector using quaternion
 #include "MyInputConfigData.h"
+#include "Components/TimelineComponent.h"
 #include "MyRewindComponent.h"
 
 
@@ -27,13 +28,27 @@ AMyArmouredCar::AMyArmouredCar() {
 	ThirdPersonCamera->SetupAttachment(SpringArmComp);
 
 	RewindComponent = CreateDefaultSubobject<UMyRewindComponent>(TEXT("RewindComponent"));
+
+
+	//const ConstructorHelpers::FObjectFinder<UCurveFloat> Curve(TEXT("/Script/Engine.CurveFloat'/Game/VehicleAssets/VehicleCurves/MyRecoilCurve.MyRecoilCurve'"));
+
+	
 }
 
 void AMyArmouredCar::BeginPlay()
 {
 	Super::BeginPlay();
 
-	//AnimInstance Cast<>
+	FOnTimelineFloat progressFunction;
+
+	progressFunction.BindUFunction(this, "setGunRecoil"); // The function EffectProgress gets called
+	FireTimeline.AddInterpFloat(RecoilCurve, progressFunction, FName{ TEXT("RecoilTrack") });
+
+	FOnTimelineEvent FinishedEvent;
+
+	FinishedEvent.BindUFunction(this, FName("fire"));
+	FireTimeline.SetTimelineFinishedFunc(FinishedEvent);
+	
 
 }
 
@@ -60,6 +75,7 @@ void AMyArmouredCar::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PEI->BindAction(InputActions->InputAccelerate, ETriggerEvent::Triggered , this, &AMyArmouredCar::Accelerate);
 	PEI->BindAction(InputActions->InputAccelerate, ETriggerEvent::Completed, this, &AMyArmouredCar::Accelerate);
 	PEI->BindAction(InputActions->Rangefind, ETriggerEvent::Triggered, this, &AMyArmouredCar::rewind);
+	PEI->BindAction(InputActions->InputFire, ETriggerEvent::Started, this, &AMyArmouredCar::fire);
 
 }
 
@@ -78,7 +94,7 @@ void AMyArmouredCar::Tick(float DeltaTime)
 
 	//TurretRotation = ThirdPersonCamera->GetComponentRotation().Yaw - GetMesh()->GetComponentRotation().Yaw;
 	FString FloatAsString = FString::Printf(TEXT("%f"), TurretRotation);
-	UE_LOG(LogTemp, Display, TEXT("%f"), TurretRotation);
+	//UE_LOG(LogTemp, Display, TEXT("%f"), TurretRotation);
 	myDrawDebugLine(GetMesh()->GetComponentLocation(), ThirdPersonCamera->GetComponentLocation(), FColor::Red);
 	//GetLookingAt();
 	getAimingAT();
@@ -86,7 +102,7 @@ void AMyArmouredCar::Tick(float DeltaTime)
 
 void AMyArmouredCar::Look(const FInputActionValue& Value){
 	FVector2D LookValue = Value.Get<FVector2D>();
-	UE_LOG(LogTemp, Log, TEXT("LOOK"));
+	//UE_LOG(LogTemp, Log, TEXT("LOOK"));
 	if (Controller != nullptr) {
 		//UE_LOG(LogTemp, Log, TEXT("Controller"));
 		AddControllerYawInput(LookValue.X);
@@ -120,6 +136,16 @@ void AMyArmouredCar::Brake(const FInputActionValue& Value) {
 	//Setting brake to the brake float value. Allows for linear input binding with xBox controller for example
 
 	GetVehicleMovementComponent()->SetBrakeInput(Value.GetMagnitude());
+}
+
+void AMyArmouredCar::fire(const FInputActionValue& Value) {
+	FireTimeline.Play();
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, TEXT("FIRE"));
+}
+
+void AMyArmouredCar::setGunRecoil(float Value) {
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, TEXT("RECOIL"));
+	GunRecoil = Value * GunRecoil;
 }
 
 FVector AMyArmouredCar::getLookingAT() {

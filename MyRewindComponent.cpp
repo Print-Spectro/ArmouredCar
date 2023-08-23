@@ -106,9 +106,7 @@ void UMyRewindComponent::replay() {
 		Rewind = false;
 		LocationArray.Empty();
 		RotationArray.Empty();
-		Cast<AMyArmouredCar>(GetOwner())->GetMesh()->SetSimulatePhysics(1);
-		
+		Cast<AMyArmouredCar>(GetOwner())->GetMesh()->SetSimulatePhysics(1);	
 	}
-
 }
 

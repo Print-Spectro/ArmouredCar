@@ -6,7 +6,10 @@
 #include "WheeledVehiclePawn.h"
 #include "InputAction.h"
 #include "InputActionValue.h"
+#include "Components/TimelineComponent.h"
 #include "MyArmouredCar.generated.h"
+
+
 
 /**
  * Storing variables that determine the state of the armoured car
@@ -25,14 +28,14 @@ protected:
 	virtual void BeginPlay() override;
 
 
-
-
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 	//creating player input component
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	FTimeline FireTimeline;
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "EnhancedInput")
 	class UInputMappingContext* InputMapping;
@@ -46,7 +49,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite)
 	class UCameraComponent* ThirdPersonCamera;
 
-
 	UPROPERTY(VisibleAnywhere,BlueprintReadWrite, Category = "Transform")
 	float TurretRotation;
 
@@ -56,7 +58,7 @@ protected:
 	UPROPERTY(VisibleAnywhere,BlueprintReadWrite, Category = "Transform")
 	float GunReciol;
 
-	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite, Category = "Defaults", Replicated)
+	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite, Category = "Defaults")
 	//Aim distance in cm. 1000000cm = 10km
 	//Trace distance for "getLookingAt" and "getAimingAT" functions 
 	float MaxAimDistance = 1000000;
@@ -77,6 +79,13 @@ protected:
 	//Rate in degrees per second
 	float TurretRotationRate = 40;
 
+	UPROPERTY(EditAnywhere, Category = "Defaults")
+	//How far back the gun recoils when firing in cm
+	float GunRecoil = 100;
+
+	UPROPERTY(EditAnywhere, Category = "Defaults")
+	UCurveFloat* RecoilCurve;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Defaults")
 	class UMyRewindComponent* RewindComponent;
 
@@ -90,6 +99,8 @@ protected:
 
 	void Brake(const FInputActionValue& Value);
 
+	void fire(const FInputActionValue& Value);
+
 	void myDrawDebugLine(const FVector& Start, const FVector& End, FColor Colour);
 
 	FVector getLookingAT();
@@ -99,6 +110,8 @@ protected:
 	void setTurretRotation(const float& rotation);
 
 	void setGunElevation(const float& elevation);
+
+	void setGunRecoil(float Value);
 
 	float getTurretRotationFromCamera(const FVector& LookingAt);
 
