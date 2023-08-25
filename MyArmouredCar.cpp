@@ -14,6 +14,7 @@
 #include "MyInputConfigData.h"
 #include "Components/TimelineComponent.h"
 #include "MyRewindComponent.h"
+#include "Online/CoreOnline.h"
 
 
 
@@ -29,10 +30,8 @@ AMyArmouredCar::AMyArmouredCar() {
 
 	RewindComponent = CreateDefaultSubobject<UMyRewindComponent>(TEXT("RewindComponent"));
 
-
+	FireTimelineComponent = CreateDefaultSubobject<UTimelineComponent>(TEXT("FireTimeline"));
 	//const ConstructorHelpers::FObjectFinder<UCurveFloat> Curve(TEXT("/Script/Engine.CurveFloat'/Game/VehicleAssets/VehicleCurves/MyRecoilCurve.MyRecoilCurve'"));
-
-	
 }
 
 void AMyArmouredCar::BeginPlay()
@@ -42,14 +41,11 @@ void AMyArmouredCar::BeginPlay()
 	FOnTimelineFloat progressFunction;
 
 	progressFunction.BindUFunction(this, "setGunRecoil"); // The function EffectProgress gets called
-	FireTimeline.AddInterpFloat(RecoilCurve, progressFunction, FName{ TEXT("RecoilTrack") });
+	FireTimelineComponent->AddInterpFloat(RecoilCurve, progressFunction, TEXT("RecoilTrack") );
 
-	FOnTimelineEvent FinishedEvent;
-
-	FinishedEvent.BindUFunction(this, FName("fire"));
-	FireTimeline.SetTimelineFinishedFunc(FinishedEvent);
 	
 
+	
 }
 
 void AMyArmouredCar::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -139,13 +135,13 @@ void AMyArmouredCar::Brake(const FInputActionValue& Value) {
 }
 
 void AMyArmouredCar::fire(const FInputActionValue& Value) {
-	FireTimeline.Play();
+	FireTimelineComponent->PlayFromStart();
 	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, TEXT("FIRE"));
 }
 
-void AMyArmouredCar::setGunRecoil(float Value) {
+void AMyArmouredCar::setGunRecoil(float value) {
 	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, TEXT("RECOIL"));
-	GunRecoil = Value * GunRecoil;
+	GunRecoil = value * MaxGunRecoil;
 }
 
 FVector AMyArmouredCar::getLookingAT() {
