@@ -8,6 +8,8 @@
 #include "InputActionValue.h"
 #include "MyArmouredCar.generated.h"
 
+
+
 /**
  * Storing variables that determine the state of the armoured car
  */
@@ -15,23 +17,29 @@ UCLASS()
 class ARMOUREDCAR_API AMyArmouredCar : public AWheeledVehiclePawn
 {
 	GENERATED_BODY()
+
+	UPROPERTY()
+	class UTimelineComponent* FireTimelineComponent;
+
 public:
 	// Sets default values for this character's properties
 	AMyArmouredCar();
+
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-
-
-
+// 	UPROPERTY(EditDefaultsOnly)
+// 	FTimeline FireTimeline;
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 	//creating player input component
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "EnhancedInput")
 	class UInputMappingContext* InputMapping;
@@ -45,7 +53,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite)
 	class UCameraComponent* ThirdPersonCamera;
 
-
 	UPROPERTY(VisibleAnywhere,BlueprintReadWrite, Category = "Transform")
 	float TurretRotation;
 
@@ -53,9 +60,9 @@ protected:
 	float GunElevation;
 
 	UPROPERTY(VisibleAnywhere,BlueprintReadWrite, Category = "Transform")
-	float GunReciol;
+	float GunRecoil;
 
-	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite, Category = "Transform")
+	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite, Category = "Defaults")
 	//Aim distance in cm. 1000000cm = 10km
 	//Trace distance for "getLookingAt" and "getAimingAT" functions 
 	float MaxAimDistance = 1000000;
@@ -75,8 +82,18 @@ protected:
 	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Defaults")
 	//Rate in degrees per second
 	float TurretRotationRate = 40;
+
+	UPROPERTY(EditAnywhere, Category = "Defaults")
+	//How far back the gun recoils when firing in cm
+	float MaxGunRecoil = 70;
+
+	UPROPERTY(EditAnywhere, Category = "Defaults")
+	class UCurveFloat* RecoilCurve;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Defaults")
 	class UMyRewindComponent* RewindComponent;
 
+	UPROPERTY()
 	UChaosVehicleMovementComponent* MovementComponent;
 
 	void Look(const FInputActionValue& Value);
@@ -86,6 +103,8 @@ protected:
 	void Steer(const FInputActionValue& Value);
 
 	void Brake(const FInputActionValue& Value);
+
+	void fire(const FInputActionValue& Value);
 
 	void myDrawDebugLine(const FVector& Start, const FVector& End, FColor Colour);
 
@@ -97,6 +116,9 @@ protected:
 
 	void setGunElevation(const float& elevation);
 
+	UFUNCTION()
+	void setGunRecoil(float Value);
+
 	float getTurretRotationFromCamera(const FVector& LookingAt);
 
 	float getGunEvevationFromCamera(const FVector& LookingAt);
@@ -107,5 +129,6 @@ protected:
 
 	void interpTurretRotation(float DeltaTime, const float& TargetRotation);
 
-	void Rewind();
+	void rewind();
+
 };

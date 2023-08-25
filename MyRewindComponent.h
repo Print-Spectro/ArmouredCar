@@ -16,25 +16,59 @@ public:
 	// Sets default values for this component's properties
 	UMyRewindComponent();
 
-	void Rewind();
+	void rewind();
+
+	//units in Hertz (per second) 
+	UPROPERTY(EditDefaultsOnly, Category = "Rewind Parameters", meta = (ToolTip = "Set the rewind sample rate in Hertz (per second)"))
+	float SampleRate = 200;
+
+	//float SampleInterval = 1 / SampleRate;
+
+	//units in seconds
+	UPROPERTY(EditDefaultsOnly, Category = "Rewind Parameters", meta = (ToolTip = "Set the duration of the rewind buffer in seconds"))
+	float SampleBufferTime = 3;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Rewind Parameters", meta = (ToolTip = "Whether rewind should interoplate between data points"))
+	bool Interpolate = 0;
 
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
-	TArray<FVector> LocationArray;
-
-	TArray<FRotator> RotationArray;
-
-	bool rewind = false;
-
-	bool record = true;
-
-	int index;
 
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-		
+private:
+	void record();
+
+	void replay();
+
+	TArray<FVector> LocationArray;
+
+	TArray<FRotator> RotationArray;
+
+
+	float SampleBufferLength = SampleBufferTime * SampleRate;
+
+	bool Rewind = false;
+
+	bool Record = true;
+
+	bool BufferIsFull = false;
+
+	int index;
+
+	FVector PreviousLocation;
+
+	FRotator PreviousRotation;
+
+	FTimerHandle SampleTimer;
+
+	FTimerDelegate SampleDelegate;
+
+	FTimerHandle RewindTimer;
+
+	FTimerHandle RewindDelegate;
 };
