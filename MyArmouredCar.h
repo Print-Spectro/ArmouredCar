@@ -39,6 +39,8 @@ public:
 	//creating player input component
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	float ReloadPercent = 100;
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "EnhancedInput")
@@ -88,23 +90,61 @@ protected:
 	float MaxGunRecoil = 70;
 
 	UPROPERTY(EditAnywhere, Category = "Defaults")
+	//How far back the gun recoils when firing in cm
+	float RecoilImpulse = 100000;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Defaults")
+	float ReloadDelay = 3;
+
+	UPROPERTY(EditAnywhere, Category = "Defaults")
+	//How far back the gun recoils when firing in cm
+	bool DrawDebugs = false;
+
+	UPROPERTY(EditAnywhere, Category = "Defaults")
 	class UCurveFloat* RecoilCurve;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Defaults")
 	class UMyRewindComponent* RewindComponent;
 
+
+	UPROPERTY(EditDefaultsOnly, Category = "Sounds")
+	class USoundBase* FireSound;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Sounds")
+	class UAudioComponent* TurretAudioComponent;
+
+	UPROPERTY(BlueprintReadWrite,EditDefaultsOnly, Category = "Sounds")
+	class UAudioComponent* EngineAudioComponent;
+
+	UPROPERTY()
+	FTimerHandle ReloadTimer;
+
+	UPROPERTY()
+	class UTimelineComponent* ReloadTimeline;
+
+	UPROPERTY()
+	bool CanFire = true;
+
 	UPROPERTY()
 	UChaosVehicleMovementComponent* MovementComponent;
 
+	UFUNCTION()
 	void Look(const FInputActionValue& Value);
 
+	UFUNCTION()
 	void Accelerate(const FInputActionValue& Value);
 
+	UFUNCTION()
 	void Steer(const FInputActionValue& Value);
 
+	UFUNCTION()
 	void Brake(const FInputActionValue& Value);
 
+	UFUNCTION()
 	void fire(const FInputActionValue& Value);
+
+	UFUNCTION()
+	void setCanFireTrue();
 
 	void myDrawDebugLine(const FVector& Start, const FVector& End, FColor Colour);
 

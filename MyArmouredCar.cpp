@@ -14,7 +14,8 @@
 #include "MyInputConfigData.h"
 #include "Components/TimelineComponent.h"
 #include "MyRewindComponent.h"
-#include "Online/CoreOnline.h"
+#include "Kismet/GameplayStatics.h"
+#include "Components/AudioComponent.h"
 
 
 
@@ -31,6 +32,10 @@ AMyArmouredCar::AMyArmouredCar() {
 	RewindComponent = CreateDefaultSubobject<UMyRewindComponent>(TEXT("RewindComponent"));
 
 	FireTimelineComponent = CreateDefaultSubobject<UTimelineComponent>(TEXT("FireTimeline"));
+
+	TurretAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("TurretRotationAudioComponent"));
+
+	EngineAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("EngineAudioComponent"));
 	//const ConstructorHelpers::FObjectFinder<UCurveFloat> Curve(TEXT("/Script/Engine.CurveFloat'/Game/VehicleAssets/VehicleCurves/MyRecoilCurve.MyRecoilCurve'"));
 }
 
@@ -39,7 +44,6 @@ void AMyArmouredCar::BeginPlay()
 	Super::BeginPlay();
 
 	FOnTimelineFloat progressFunction;
-
 	progressFunction.BindUFunction(this, "setGunRecoil"); // The function EffectProgress gets called
 	FireTimelineComponent->AddInterpFloat(RecoilCurve, progressFunction, TEXT("RecoilTrack") );
 
@@ -71,7 +75,7 @@ void AMyArmouredCar::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PEI->BindAction(InputActions->InputAccelerate, ETriggerEvent::Triggered , this, &AMyArmouredCar::Accelerate);
 	PEI->BindAction(InputActions->InputAccelerate, ETriggerEvent::Completed, this, &AMyArmouredCar::Accelerate);
 	PEI->BindAction(InputActions->Rangefind, ETriggerEvent::Triggered, this, &AMyArmouredCar::rewind);
-	PEI->BindAction(InputActions->InputFire, ETriggerEvent::Started, this, &AMyArmouredCar::fire);
+	PEI->BindAction(InputActions->InputFire, ETriggerEvent::Triggered, this, &AMyArmouredCar::fire);
 
 }
 
@@ -92,8 +96,11 @@ void AMyArmouredCar::Tick(float DeltaTime)
 	FString FloatAsString = FString::Printf(TEXT("%f"), TurretRotation);
 	//UE_LOG(LogTemp, Display, TEXT("%f"), TurretRotation);
 	myDrawDebugLine(GetMesh()->GetComponentLocation(), ThirdPersonCamera->GetComponentLocation(), FColor::Red);
-	//GetLookingAt();
-	getAimingAT();
+
+	if (!CanFire) {
+		float NewPercent = UKismetMathLibrary::FInterpTo_Constant(ReloadPercent, 1, DeltaTime, 1.f/ReloadDelay);
+		ReloadPercent = NewPercent;
+	}
 }
 
 void AMyArmouredCar::Look(const FInputActionValue& Value){
@@ -135,12 +142,27 @@ void AMyArmouredCar::Brake(const FInputActionValue& Value) {
 }
 
 void AMyArmouredCar::fire(const FInputActionValue& Value) {
+	if (!CanFire) {
+		return;
+	}
+	CanFire = false;
+	GetWorld()->GetTimerManager().SetTimer(ReloadTimer, this, &AMyArmouredCar::setCanFireTrue, ReloadDelay, false, ReloadDelay);
+	ReloadPercent = 0;
 	FireTimelineComponent->PlayFromStart();
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, TEXT("FIRE"));
+	UGameplayStatics::PlaySoundAtLocation(GetWorld(), FireSound, GetMesh()->GetBoneLocation("Barrel"));
+	//Getting direction of gun to add impulse to vehicle
+	FQuat RotationQuat = GetMesh()->GetBoneQuaternion(FName("Gunshield"));
+	FVector Impulse =  UKismetMathLibrary::Quat_RotateVector(RotationQuat, FVector(RecoilImpulse, 0.f, 0.f));
+	GetMesh()->AddImpulse(-Impulse, "Root", false);
+	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, TEXT("FIRE"));
+}
+
+void AMyArmouredCar::setCanFireTrue()
+{
+	CanFire = true;
 }
 
 void AMyArmouredCar::setGunRecoil(float value) {
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, TEXT("RECOIL"));
 	GunRecoil = value * MaxGunRecoil;
 }
 
@@ -185,14 +207,8 @@ FVector AMyArmouredCar::getAimingAT() {
 		ECollisionChannel::ECC_Visibility);
 
 	if (HitResult) {
-		DrawDebugLine(
-			GetWorld(),
-			Start,
-			End,
-			FColor::Red,
-			false, // Persistent lines
-			0.1    // Lifetime
-		);
+
+		myDrawDebugLine(Start, End, FColor::Red);
 		return OutHitResult.ImpactPoint;
 
 	}
@@ -203,6 +219,9 @@ FVector AMyArmouredCar::getAimingAT() {
 }
 
 void AMyArmouredCar::myDrawDebugLine(const FVector& Start, const FVector& End, FColor Colour = FColor::Red) {
+	if (!DrawDebugs) {
+		return;
+	}
 	DrawDebugLine(
 		GetWorld(),
 		Start,
@@ -283,6 +302,14 @@ void AMyArmouredCar::interpTurretRotation(float DeltaTime, const float& TargetRo
 	float NewRotation = FMath::FInterpConstantTo(TurretRotation, LocalTarget, DeltaTime, TurretRotationRate);
 	setTurretRotation(NewRotation);
 	
+
+	//Handling turret rotation sound
+	if (abs(LocalTarget - TurretRotation) > 0) {
+			TurretAudioComponent->SetPaused(false);
+	}
+	else {
+		TurretAudioComponent->SetPaused(true);
+	}
 	
 }
 
