@@ -25,7 +25,7 @@ public:
 	// Sets default values for this character's properties
 	AMyArmouredCar();
 
-
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLifetimeProps) const override;
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -106,9 +106,18 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Defaults")
 	class UMyRewindComponent* RewindComponent;
 
+	//Set projectile blueprint to spawn (allows setting of mesh in blueprint)
+	UPROPERTY(EditDefaultsOnly, Category = "Defaults")
+	TSubclassOf<class AMyProjectile> ProjectileClass;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Sounds")
 	class USoundBase* FireSound;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Sounds")
+	float  ReloadCompleteSoundDuration = 0.6;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Sounds")
+	class USoundBase* ReloadCompleteSound;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Sounds")
 	class UAudioComponent* TurretAudioComponent;
@@ -120,6 +129,9 @@ protected:
 	FTimerHandle ReloadTimer;
 
 	UPROPERTY()
+	FTimerHandle ReloadCompleteSoundTimer;
+
+	UPROPERTY(EditDefaultsOnly)
 	class UTimelineComponent* ReloadTimeline;
 
 	UPROPERTY()
@@ -146,10 +158,14 @@ protected:
 	UFUNCTION()
 	void setCanFireTrue();
 
+	UFUNCTION()
+	void playReloadCompletSound();
+
 	void myDrawDebugLine(const FVector& Start, const FVector& End, FColor Colour);
 
 	FVector getLookingAT();
 
+	UFUNCTION(BlueprintCallable)
 	FVector getAimingAT();
 
 	void setTurretRotation(const float& rotation);

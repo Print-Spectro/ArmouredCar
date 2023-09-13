@@ -1,30 +1,44 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "MyArmouredCar.h"
+#include "WheeledVehiclePawn.h"
+
+//input
 #include <EnhancedInputComponent.h>
 #include <EnhancedInputSubsystems.h>
 #include "EnhancedInput/Public/EnhancedInputComponent.h"
+#include "MyInputConfigData.h"
+
+//components
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "UObject/ConstructorHelpers.h"
 #include "ChaosVehicleMovementComponent.h"
-#include "WheeledVehiclePawn.h"
-#include "DrawDebugHelpers.h"
-#include "Kismet/KismetMathLibrary.h" //used for rotating vector using quaternion
-#include "MyInputConfigData.h"
-#include "Components/TimelineComponent.h"
 #include "MyRewindComponent.h"
-#include "Kismet/GameplayStatics.h"
-#include "Components/AudioComponent.h"
+#include "Components/TimelineComponent.h"
+#include "Blueprint/UserWidget.h" //crosshair
+	//Audio
+	#include "Components/AudioComponent.h"
 
+//debug
+#include "DrawDebugHelpers.h"
+
+//tools
+#include "Kismet/KismetMathLibrary.h" 
+#include "Kismet/GameplayStatics.h"
+
+//Projectile to spawn
+#include "MyProjectile.h"
+#include "GameFramework/ProjectileMovementComponent.h"
 
 
 AMyArmouredCar::AMyArmouredCar() {
 	PrimaryActorTick.bCanEverTick = true;
+
+	bReplicates = true;
 	SpringArmComp = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));//Creating spring arm
 	SpringArmComp->SetupAttachment(GetMesh());//Setting up attachment to the mesh
 
-	//MovementComponent = 
 
 	ThirdPersonCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("ThirdPersonCamera"));
 	ThirdPersonCamera->SetupAttachment(SpringArmComp);
@@ -36,7 +50,14 @@ AMyArmouredCar::AMyArmouredCar() {
 	TurretAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("TurretRotationAudioComponent"));
 
 	EngineAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("EngineAudioComponent"));
+
+
 	//const ConstructorHelpers::FObjectFinder<UCurveFloat> Curve(TEXT("/Script/Engine.CurveFloat'/Game/VehicleAssets/VehicleCurves/MyRecoilCurve.MyRecoilCurve'"));
+}
+
+void AMyArmouredCar::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 }
 
 void AMyArmouredCar::BeginPlay()
@@ -146,20 +167,41 @@ void AMyArmouredCar::fire(const FInputActionValue& Value) {
 		return;
 	}
 	CanFire = false;
-	GetWorld()->GetTimerManager().SetTimer(ReloadTimer, this, &AMyArmouredCar::setCanFireTrue, ReloadDelay, false, ReloadDelay);
+	
 	ReloadPercent = 0;
+
+	//Spawning projectile
+	FActorSpawnParameters SpawnInfo;
+
+	AActor* SpawnedActor = GetWorld()->SpawnActor<AMyProjectile>(ProjectileClass, GetMesh()->GetSocketLocation(FName("BarrelSocket")), GetMesh()->GetSocketRotation(FName("BarrelSocket")), SpawnInfo);
+	UProjectileMovementComponent* ProjectileMovement = SpawnedActor->FindComponentByClass<UProjectileMovementComponent>();
+	//ProjectileMovement->AddImpulse(GetVelocity(), TEXT("Root"), true);
+
 	FireTimelineComponent->PlayFromStart();
+	//Delay before setting can fire to true
+	if (!GetWorld()->GetTimerManager().IsTimerActive(ReloadTimer)) {
+		GetWorld()->GetTimerManager().SetTimer(ReloadTimer, this, &AMyArmouredCar::setCanFireTrue, ReloadDelay, false, ReloadDelay);
+	}
+	if (ReloadDelay >= ReloadCompleteSoundDuration) {
+		GetWorld()->GetTimerManager().SetTimer(ReloadCompleteSoundTimer, this, &AMyArmouredCar::playReloadCompletSound, ReloadDelay, false, ReloadDelay - ReloadCompleteSoundDuration);
+	}
 	UGameplayStatics::PlaySoundAtLocation(GetWorld(), FireSound, GetMesh()->GetBoneLocation("Barrel"));
 	//Getting direction of gun to add impulse to vehicle
 	FQuat RotationQuat = GetMesh()->GetBoneQuaternion(FName("Gunshield"));
 	FVector Impulse =  UKismetMathLibrary::Quat_RotateVector(RotationQuat, FVector(RecoilImpulse, 0.f, 0.f));
 	GetMesh()->AddImpulse(-Impulse, "Root", false);
 	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, TEXT("FIRE"));
+	
 }
 
 void AMyArmouredCar::setCanFireTrue()
 {
 	CanFire = true;
+}
+
+void AMyArmouredCar::playReloadCompletSound()
+{
+	UGameplayStatics::PlaySoundAtLocation(GetWorld(), ReloadCompleteSound, GetMesh()->GetBoneLocation("Turret"));
 }
 
 void AMyArmouredCar::setGunRecoil(float value) {
@@ -194,9 +236,9 @@ FVector AMyArmouredCar::getAimingAT() {
 
 	FHitResult OutHitResult;
 
-	FVector Start = GetMesh()->GetBoneLocation(FName("Gunshield"));
+	FVector Start = GetMesh()->GetBoneLocation(FName("Barrel"));
 
-	FQuat RotationQuat = GetMesh()->GetBoneQuaternion(FName("Gunshield"));
+	FQuat RotationQuat = GetMesh()->GetBoneQuaternion(FName("Barrel"));
 
 	FVector End = Start + UKismetMathLibrary::Quat_RotateVector(RotationQuat, FVector(MaxAimDistance, 0.f, 0.f));
 	
@@ -208,7 +250,7 @@ FVector AMyArmouredCar::getAimingAT() {
 
 	if (HitResult) {
 
-		myDrawDebugLine(Start, End, FColor::Red);
+		myDrawDebugLine(Start, OutHitResult.ImpactPoint, FColor::Red);
 		return OutHitResult.ImpactPoint;
 
 	}
