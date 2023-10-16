@@ -10,6 +10,7 @@
 /**
  * Stores pointers to input actions for native binding
  */
+
 UCLASS()
 class ARMOUREDCAR_API UMyInputConfigData : public UDataAsset
 {

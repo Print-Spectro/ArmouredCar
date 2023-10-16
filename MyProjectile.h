@@ -25,6 +25,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly)
 	class UProjectileMovementComponent* ProjectileMovement;
 
+	UPROPERTY(EditDefaultsOnly)
+	float Lifetime = 10;
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

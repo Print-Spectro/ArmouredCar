@@ -113,6 +113,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Sounds")
 	class USoundBase* FireSound;
 
+	//set the duration to have the sound play at the right time
 	UPROPERTY(EditDefaultsOnly, Category = "Sounds")
 	float  ReloadCompleteSoundDuration = 0.6;
 

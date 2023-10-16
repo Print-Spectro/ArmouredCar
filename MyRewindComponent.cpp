@@ -19,7 +19,6 @@ UMyRewindComponent::UMyRewindComponent()
 	// ...
 }
 
-
 // Called when the game starts
 void UMyRewindComponent::BeginPlay()
 {
@@ -27,9 +26,6 @@ void UMyRewindComponent::BeginPlay()
 	if (!GetWorld()->GetTimerManager().IsTimerActive(SampleTimer)) {
 		GetWorld()->GetTimerManager().SetTimer(SampleTimer, SampleDelegate, 1/SampleRate, true);
 	}
-	//GetWorld()->GetTimerManager().SetTimer(SampleTimer, this, UMyRewindComponent::record(), 1/SampleRate, true, Interval);
-	// ...
-	
 }
 
 
@@ -37,7 +33,6 @@ void UMyRewindComponent::BeginPlay()
 void UMyRewindComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
 	if (Rewind) {
 		//Interpolate between current and target location, setting location each frame.
 		if (Interpolate)
@@ -54,10 +49,7 @@ void UMyRewindComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 			GetOwner()->SetActorLocation(LocationArray[index], true, nullptr, ETeleportType::ResetPhysics);
 			GetOwner()->SetActorRotation(RotationArray[index], ETeleportType::ResetPhysics);
 		}
-
 	}
-
-
 }
 
 void UMyRewindComponent::rewind() {
@@ -73,13 +65,10 @@ void UMyRewindComponent::rewind() {
 
 void UMyRewindComponent::record() {
 	//Records the state parameters of the parent actor to arrays 
-
-
 	//Allows switching on an off recording
 	if (!Record) {
 		return;
 	}
-
 	//When the buffer is full, based on the set parameters, we remove the first element every time we add an element
 	if (LocationArray.Num() > SampleBufferLength - 1) {
 		LocationArray.RemoveAt(0);

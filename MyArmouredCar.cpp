@@ -8,6 +8,7 @@
 #include <EnhancedInputSubsystems.h>
 #include "EnhancedInput/Public/EnhancedInputComponent.h"
 #include "MyInputConfigData.h"
+#include "MyInputConfigData.h"
 
 //components
 #include "GameFramework/SpringArmComponent.h"
@@ -31,14 +32,12 @@
 #include "MyProjectile.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 
-
 AMyArmouredCar::AMyArmouredCar() {
 	PrimaryActorTick.bCanEverTick = true;
 
 	bReplicates = true;
 	SpringArmComp = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));//Creating spring arm
 	SpringArmComp->SetupAttachment(GetMesh());//Setting up attachment to the mesh
-
 
 	ThirdPersonCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("ThirdPersonCamera"));
 	ThirdPersonCamera->SetupAttachment(SpringArmComp);
@@ -50,7 +49,6 @@ AMyArmouredCar::AMyArmouredCar() {
 	TurretAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("TurretRotationAudioComponent"));
 
 	EngineAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("EngineAudioComponent"));
-
 
 	//const ConstructorHelpers::FObjectFinder<UCurveFloat> Curve(TEXT("/Script/Engine.CurveFloat'/Game/VehicleAssets/VehicleCurves/MyRecoilCurve.MyRecoilCurve'"));
 }
@@ -66,11 +64,12 @@ void AMyArmouredCar::BeginPlay()
 
 	FOnTimelineFloat progressFunction;
 	progressFunction.BindUFunction(this, "setGunRecoil"); // The function EffectProgress gets called
-	FireTimelineComponent->AddInterpFloat(RecoilCurve, progressFunction, TEXT("RecoilTrack") );
-
-	
-
-	
+	if (RecoilCurve) {
+		FireTimelineComponent->AddInterpFloat(RecoilCurve, progressFunction, TEXT("RecoilTrack"));
+	}
+	else {
+		UE_LOG(LogTemp, Warning, TEXT("AMyArmouredCar::BeginPlay: RecoilCurve not set"));
+	}
 }
 
 void AMyArmouredCar::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -100,23 +99,22 @@ void AMyArmouredCar::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 
 }
 
-
 // Called every frame
 void AMyArmouredCar::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	//GetVehicleMovementComponent()->SetThrottleInput(1.f);
 
 	//Setting the turret to follow the camera each tick
 	FVector LookingAt = getLookingAT();
 	interpTurretRotation(DeltaTime, getTurretRotationFromCamera(LookingAt));
 	//setGunElevation(getGunEvevationFromCamera(LookingAt));
 	interpGunElevation(DeltaTime, getGunEvevationFromCamera(LookingAt));
-
 	//TurretRotation = ThirdPersonCamera->GetComponentRotation().Yaw - GetMesh()->GetComponentRotation().Yaw;
 	FString FloatAsString = FString::Printf(TEXT("%f"), TurretRotation);
 	//UE_LOG(LogTemp, Display, TEXT("%f"), TurretRotation);
 	myDrawDebugLine(GetMesh()->GetComponentLocation(), ThirdPersonCamera->GetComponentLocation(), FColor::Red);
+
+
 
 	if (!CanFire) {
 		float NewPercent = UKismetMathLibrary::FInterpTo_Constant(ReloadPercent, 1, DeltaTime, 1.f/ReloadDelay);
@@ -135,18 +133,17 @@ void AMyArmouredCar::Look(const FInputActionValue& Value){
 }
 
 void AMyArmouredCar::Accelerate(const FInputActionValue& Value) {
-	//Accelerate input sets throttle. Allows for linear input binding to trigg
-
+	//Accelerate input sets throttle. Allows for linear input binding to trigger
 	float Magnitude = Value.GetMagnitude();
 	//UE_LOG(LogTemp, Display, TEXT("ThrottleDetected"));
 	GetVehicleMovementComponent()->SetThrottleInput(Magnitude);
+	//vehicle will brake if trying to drive forward while moving backwards, this allows for greater deceleration to change direction. 
 	if (GetVehicleMovementComponent()->GetForwardSpeed() < -0.1) {
 		GetVehicleMovementComponent()->SetBrakeInput(Magnitude);
 	}
 	if (GetVehicleMovementComponent()->GetForwardSpeed() > -0.1) {
 		GetVehicleMovementComponent()->SetBrakeInput(0);
 	}
-	
 }
 
 void AMyArmouredCar::Steer(const FInputActionValue& Value) {
@@ -167,16 +164,13 @@ void AMyArmouredCar::fire(const FInputActionValue& Value) {
 		return;
 	}
 	CanFire = false;
-	
 	ReloadPercent = 0;
-
 	//Spawning projectile
 	FActorSpawnParameters SpawnInfo;
 
 	AActor* SpawnedActor = GetWorld()->SpawnActor<AMyProjectile>(ProjectileClass, GetMesh()->GetSocketLocation(FName("BarrelSocket")), GetMesh()->GetSocketRotation(FName("BarrelSocket")), SpawnInfo);
 	UProjectileMovementComponent* ProjectileMovement = SpawnedActor->FindComponentByClass<UProjectileMovementComponent>();
 	//ProjectileMovement->AddImpulse(GetVelocity(), TEXT("Root"), true);
-
 	FireTimelineComponent->PlayFromStart();
 	//Delay before setting can fire to true
 	if (!GetWorld()->GetTimerManager().IsTimerActive(ReloadTimer)) {
@@ -189,9 +183,9 @@ void AMyArmouredCar::fire(const FInputActionValue& Value) {
 	//Getting direction of gun to add impulse to vehicle
 	FQuat RotationQuat = GetMesh()->GetBoneQuaternion(FName("Gunshield"));
 	FVector Impulse =  UKismetMathLibrary::Quat_RotateVector(RotationQuat, FVector(RecoilImpulse, 0.f, 0.f));
+	//recoil effect
 	GetMesh()->AddImpulse(-Impulse, "Root", false);
 	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, TEXT("FIRE"));
-	
 }
 
 void AMyArmouredCar::setCanFireTrue()
@@ -220,11 +214,8 @@ FVector AMyArmouredCar::getLookingAT() {
 		ECollisionChannel::ECC_Visibility);
 
 	if (HitResult) {
-
 		myDrawDebugLine(Start, OutHitResult.ImpactPoint, FColor::Green);
-
 		return OutHitResult.ImpactPoint;
-
 	}
 	else {
 		return End;
@@ -233,13 +224,12 @@ FVector AMyArmouredCar::getLookingAT() {
 
 FVector AMyArmouredCar::getAimingAT() {
 	//Line trace starting at the "gunshield" bone along the line of the gun barrel, returns first hit in the visibility channel
-
 	FHitResult OutHitResult;
-
+	//Start location of the line trace
 	FVector Start = GetMesh()->GetBoneLocation(FName("Barrel"));
-
+	//Getting rotation of the barrel bone to line trace along 
 	FQuat RotationQuat = GetMesh()->GetBoneQuaternion(FName("Barrel"));
-
+	//rotating finding the end point of the line trace to determine where the barrel is facing
 	FVector End = Start + UKismetMathLibrary::Quat_RotateVector(RotationQuat, FVector(MaxAimDistance, 0.f, 0.f));
 	
 	bool HitResult = GetWorld()->LineTraceSingleByChannel(
@@ -249,10 +239,8 @@ FVector AMyArmouredCar::getAimingAT() {
 		ECollisionChannel::ECC_Visibility);
 
 	if (HitResult) {
-
 		myDrawDebugLine(Start, OutHitResult.ImpactPoint, FColor::Red);
 		return OutHitResult.ImpactPoint;
-
 	}
 	else {
 		myDrawDebugLine(Start, End, FColor::Red);
@@ -272,8 +260,6 @@ void AMyArmouredCar::myDrawDebugLine(const FVector& Start, const FVector& End, F
 		false, // Persistent lines
 		0.1    // Lifetime
 	);
-
-
 }
 
 FVector AMyArmouredCar::getRelativeLookingAt(const FVector& LookingAt) {
@@ -281,20 +267,16 @@ FVector AMyArmouredCar::getRelativeLookingAt(const FVector& LookingAt) {
 	FQuat MeshAngle = GetMesh()->GetComponentQuat();
 	//Taking the world looking at and making it relative to the turret bone by subtracting the vehicle location and rotating by the inverse of the vehicle rotation.
 	FVector RelativeLookingAt = UKismetMathLibrary::Quat_RotateVector(MeshAngle.Inverse(), LookingAt - GetMesh()->GetBoneLocation(FName("Turret")));
-	
 	return RelativeLookingAt;
 }
 
 float AMyArmouredCar::getTurretRotationFromCamera(const FVector& LookingAt) {
 	//Takes the looking at vector (location) from the getLookingAt function 
 	//Returns the rotation of the turret bone so that it looks at the same spot as the player camera
-
 	//Getting the world rotation of the vehicle to rotate the looking at vector so that it has the same orientation as the vehicle
 	FQuat MeshAngle = GetMesh()->GetComponentQuat();
-
 	//Taking the world "LookingAt" and making it relative to the turret bone by subtracting the vehicle location and rotating by the inverse of the vehicle rotation.
 	FVector RelativeLookingAt = UKismetMathLibrary::Quat_RotateVector(MeshAngle.Inverse(), LookingAt - GetMesh()->GetBoneLocation(FName("Turret")));
-
 	//Calculating the angle between the turret bone and the looking at location in the plane of the vehicle
 	FRotator Rotation = FRotationMatrix::MakeFromX(RelativeLookingAt).Rotator();
 	//We only want the Yaw
@@ -304,13 +286,10 @@ float AMyArmouredCar::getTurretRotationFromCamera(const FVector& LookingAt) {
 
 float AMyArmouredCar::getGunEvevationFromCamera(const FVector& LookingAt) {
 	//Calculates and returns the rotation of the gunshield bone so that it looks at the same spot as the player camera
-	// 
 	//Getting the world rotation of the vehicle to rotate the looking at vector so that it has the same orientation as the vehicle
 	FQuat MeshAngle = GetMesh()->GetComponentQuat();
-
 	//Taking the world looking at and making it relative to the turret bone by subtracting the vehicle location and rotating by the inverse of the vehicle rotation.
 	FVector RelativeLookingAt = UKismetMathLibrary::Quat_RotateVector(MeshAngle.Inverse(), LookingAt - GetMesh()->GetBoneLocation(FName("Gunshield")));
-
 	//float rotation = FMath::Atan(RelativeLookingAt.Y / RelativeLookingAt.X) * 360/(2*3.14159265358979);
 	FRotator Rotation = FRotationMatrix::MakeFromX(RelativeLookingAt).Rotator();
 	float elevation = Rotation.Pitch;
@@ -327,7 +306,7 @@ void AMyArmouredCar::interpTurretRotation(float DeltaTime, const float& TargetRo
 	//linear interpolation from the current turret rotation to a target rotation with some hacky maths to make it work properly
 	float LocalTarget;
 	//The shorter of the two rotations between two angles on a circle is always less than 180 degrees, in this instance, we just interpolate like normal
-	if (abs(TargetRotation - TurretRotation)<=180.f) {
+	if (abs(TargetRotation - TurretRotation) <= 180.f) {
 		LocalTarget = TargetRotation;
 	}
 	//If the angle is greater than 180 degrees then we would be taking the longer path, hence we calculate a new local target that takes the shorter path
@@ -341,18 +320,16 @@ void AMyArmouredCar::interpTurretRotation(float DeltaTime, const float& TargetRo
 			setTurretRotation(remainder(TurretRotation, 360));
 		}
 	}
+
 	float NewRotation = FMath::FInterpConstantTo(TurretRotation, LocalTarget, DeltaTime, TurretRotationRate);
 	setTurretRotation(NewRotation);
-	
-
 	//Handling turret rotation sound
-	if (abs(LocalTarget - TurretRotation) > 0) {
+	if (LocalTarget != TurretRotation) {
 			TurretAudioComponent->SetPaused(false);
 	}
 	else {
 		TurretAudioComponent->SetPaused(true);
 	}
-	
 }
 
 void AMyArmouredCar::setTurretRotation(const float& rotation) {

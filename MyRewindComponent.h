@@ -22,8 +22,6 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Rewind Parameters", meta = (ToolTip = "Set the rewind sample rate in Hertz (per second)"))
 	float SampleRate = 200;
 
-	//float SampleInterval = 1 / SampleRate;
-
 	//units in seconds
 	UPROPERTY(EditDefaultsOnly, Category = "Rewind Parameters", meta = (ToolTip = "Set the duration of the rewind buffer in seconds"))
 	float SampleBufferTime = 3;
@@ -34,7 +32,6 @@ public:
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
-
 
 public:	
 	// Called every frame
@@ -48,7 +45,6 @@ private:
 	TArray<FVector> LocationArray;
 
 	TArray<FRotator> RotationArray;
-
 
 	float SampleBufferLength = SampleBufferTime * SampleRate;
 

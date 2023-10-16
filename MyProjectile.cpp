@@ -14,21 +14,20 @@ AMyProjectile::AMyProjectile()
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 	Mesh->SetupAttachment(RootComponent);
 
+	//configure in child blueprint class
 	ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovement"));
-
 }
 
 // Called when the game starts or when spawned
 void AMyProjectile::BeginPlay()
 {
 	Super::BeginPlay();
-	SetLifeSpan(10);
+	SetLifeSpan(Lifetime);
 }
 
 // Called every frame
 void AMyProjectile::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
