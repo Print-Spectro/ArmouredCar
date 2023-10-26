@@ -212,7 +212,6 @@ FVector AMyArmouredCar::getLookingAT() {
 		Start,
 		End,
 		ECollisionChannel::ECC_Visibility);
-
 	if (HitResult) {
 		myDrawDebugLine(Start, OutHitResult.ImpactPoint, FColor::Green);
 		return OutHitResult.ImpactPoint;
@@ -231,7 +230,7 @@ FVector AMyArmouredCar::getAimingAT() {
 	FQuat RotationQuat = GetMesh()->GetBoneQuaternion(FName("Barrel"));
 	//rotating finding the end point of the line trace to determine where the barrel is facing
 	FVector End = Start + UKismetMathLibrary::Quat_RotateVector(RotationQuat, FVector(MaxAimDistance, 0.f, 0.f));
-	
+	//line trace
 	bool HitResult = GetWorld()->LineTraceSingleByChannel(
 		OutHitResult,
 		Start,
@@ -263,7 +262,7 @@ void AMyArmouredCar::myDrawDebugLine(const FVector& Start, const FVector& End, F
 }
 
 FVector AMyArmouredCar::getRelativeLookingAt(const FVector& LookingAt) {
-	//Getting the world rotation of the vehicle to rotate the looking at vector so that it has the same orientation as the vehicle
+	//Getting the world rotation of the vehicle to rotate the looking at vector so that relative looking at is in vehicle rotation space
 	FQuat MeshAngle = GetMesh()->GetComponentQuat();
 	//Taking the world looking at and making it relative to the turret bone by subtracting the vehicle location and rotating by the inverse of the vehicle rotation.
 	FVector RelativeLookingAt = UKismetMathLibrary::Quat_RotateVector(MeshAngle.Inverse(), LookingAt - GetMesh()->GetBoneLocation(FName("Turret")));
@@ -320,7 +319,6 @@ void AMyArmouredCar::interpTurretRotation(float DeltaTime, const float& TargetRo
 			setTurretRotation(remainder(TurretRotation, 360));
 		}
 	}
-
 	float NewRotation = FMath::FInterpConstantTo(TurretRotation, LocalTarget, DeltaTime, TurretRotationRate);
 	setTurretRotation(NewRotation);
 	//Handling turret rotation sound
