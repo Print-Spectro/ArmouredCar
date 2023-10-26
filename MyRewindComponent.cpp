@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+//Actor component that allows rewinding through time
 
 
 #include "MyRewindComponent.h"

@@ -34,22 +34,15 @@
 
 AMyArmouredCar::AMyArmouredCar() {
 	PrimaryActorTick.bCanEverTick = true;
-
 	bReplicates = true;
 	SpringArmComp = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));//Creating spring arm
 	SpringArmComp->SetupAttachment(GetMesh());//Setting up attachment to the mesh
-
 	ThirdPersonCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("ThirdPersonCamera"));
 	ThirdPersonCamera->SetupAttachment(SpringArmComp);
-
 	RewindComponent = CreateDefaultSubobject<UMyRewindComponent>(TEXT("RewindComponent"));
-
 	FireTimelineComponent = CreateDefaultSubobject<UTimelineComponent>(TEXT("FireTimeline"));
-
 	TurretAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("TurretRotationAudioComponent"));
-
 	EngineAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("EngineAudioComponent"));
-
 	//const ConstructorHelpers::FObjectFinder<UCurveFloat> Curve(TEXT("/Script/Engine.CurveFloat'/Game/VehicleAssets/VehicleCurves/MyRecoilCurve.MyRecoilCurve'"));
 }
 
@@ -61,7 +54,6 @@ void AMyArmouredCar::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 void AMyArmouredCar::BeginPlay()
 {
 	Super::BeginPlay();
-
 	FOnTimelineFloat progressFunction;
 	progressFunction.BindUFunction(this, "setGunRecoil"); // The function EffectProgress gets called
 	if (RecoilCurve) {
@@ -96,14 +88,12 @@ void AMyArmouredCar::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PEI->BindAction(InputActions->InputAccelerate, ETriggerEvent::Completed, this, &AMyArmouredCar::Accelerate);
 	PEI->BindAction(InputActions->Rangefind, ETriggerEvent::Triggered, this, &AMyArmouredCar::rewind);
 	PEI->BindAction(InputActions->InputFire, ETriggerEvent::Triggered, this, &AMyArmouredCar::fire);
-
 }
 
 // Called every frame
 void AMyArmouredCar::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 	//Setting the turret to follow the camera each tick
 	FVector LookingAt = getLookingAT();
 	interpTurretRotation(DeltaTime, getTurretRotationFromCamera(LookingAt));
@@ -113,9 +103,6 @@ void AMyArmouredCar::Tick(float DeltaTime)
 	FString FloatAsString = FString::Printf(TEXT("%f"), TurretRotation);
 	//UE_LOG(LogTemp, Display, TEXT("%f"), TurretRotation);
 	myDrawDebugLine(GetMesh()->GetComponentLocation(), ThirdPersonCamera->GetComponentLocation(), FColor::Red);
-
-
-
 	if (!CanFire) {
 		float NewPercent = UKismetMathLibrary::FInterpTo_Constant(ReloadPercent, 1, DeltaTime, 1.f/ReloadDelay);
 		ReloadPercent = NewPercent;
@@ -147,7 +134,6 @@ void AMyArmouredCar::Accelerate(const FInputActionValue& Value) {
 }
 
 void AMyArmouredCar::Steer(const FInputActionValue& Value) {
-
 	float Magnitude = Value.GetMagnitude();
 	GetVehicleMovementComponent()->SetSteeringInput(Magnitude);
 }
@@ -155,7 +141,6 @@ void AMyArmouredCar::Steer(const FInputActionValue& Value) {
 
 void AMyArmouredCar::Brake(const FInputActionValue& Value) {
 	//Setting brake to the brake float value. Allows for linear input binding with xBox controller for example
-
 	GetVehicleMovementComponent()->SetBrakeInput(Value.GetMagnitude());
 }
 
@@ -167,7 +152,6 @@ void AMyArmouredCar::fire(const FInputActionValue& Value) {
 	ReloadPercent = 0;
 	//Spawning projectile
 	FActorSpawnParameters SpawnInfo;
-
 	AActor* SpawnedActor = GetWorld()->SpawnActor<AMyProjectile>(ProjectileClass, GetMesh()->GetSocketLocation(FName("BarrelSocket")), GetMesh()->GetSocketRotation(FName("BarrelSocket")), SpawnInfo);
 	UProjectileMovementComponent* ProjectileMovement = SpawnedActor->FindComponentByClass<UProjectileMovementComponent>();
 	//ProjectileMovement->AddImpulse(GetVelocity(), TEXT("Root"), true);

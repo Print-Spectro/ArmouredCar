@@ -26,6 +26,7 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Rewind Parameters", meta = (ToolTip = "Set the duration of the rewind buffer in seconds"))
 	float SampleBufferTime = 3;
 
+	//Allows for interpolation between data points for smoother movement
 	UPROPERTY(EditDefaultsOnly, Category = "Rewind Parameters", meta = (ToolTip = "Whether rewind should interoplate between data points"))
 	bool Interpolate = 0;
 

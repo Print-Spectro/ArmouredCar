@@ -13,5 +13,4 @@ UCLASS()
 class ARMOUREDCAR_API AArmouredCarGameModeBase : public AGameModeBase
 {
 	GENERATED_BODY()
-	
 };
